@@ -1,0 +1,58 @@
+import OpenAI from "openai";
+import { NextResponse } from "next/server";
+
+export async function POST(req: Request) {
+  try {
+    const { messages } = await req.json();
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "AI API key is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const response = await client.responses.create({
+      model: "gpt-5",
+      instructions: `
+You are NOVA AI, a professional all-in-one AI assistant.
+
+Help users with:
+- Questions and answers
+- Ideas
+- Prompts
+- Scripts
+- CVs and resumes
+- Cover letters
+- Emails
+- Writing
+- Coding
+- Translation
+- Productivity
+
+Be helpful, professional and clear.
+      `,
+      input: messages.map(
+        (message: { role: "user" | "assistant"; content: string }) => ({
+          role: message.role,
+          content: message.content,
+        })
+      ),
+    });
+
+    return NextResponse.json({
+      message: response.output_text,
+    });
+  } catch (error) {
+    console.error("NOVA AI error:", error);
+
+    return NextResponse.json(
+      { error: "Unable to get an AI response." },
+      { status: 500 }
+    );
+  }
+}
